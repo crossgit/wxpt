@@ -1,0 +1,309 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+<body>
+
+
+    <img id="image" src="./image/a1.jpg" alt="">
+
+    <div>
+        <label for="p_width">width:</label>
+        <input type="text" id="p_width" value="3">
+        <label for="p_height">height:</label>
+        <input type="text" id="p_height" value="4">
+
+        <input type="button" id="btnCreateTable" value="切割">
+        <input type="button" id="btnRand" value="打碎">
+    </div>
+    <div id="Table"></div> 
+    <script>
+        var tb = document.getElementById('Table');
+
+        var tb_width = +document.getElementById('p_width').value;
+        var tb_height = +document.getElementById('p_height').value;
+        var pic_width = 100;
+        var pic_height = 100;
+        var pic_One = document.getElementById('image');
+        var table = document.createElement('table');
+        var pics = [];
+        document.getElementById('btnCreateTable').addEventListener('click', function () {
+            table.innerHTML = '';
+            // debugger; 
+            tb_width = +document.getElementById('p_width').value;
+            tb_height = +document.getElementById('p_height').value;
+            table.setAttribute('border', '0');
+            table.setAttribute('cellPadding', '0');
+            table.setAttribute('cellSpacing', '1');
+            pics = [];
+            // 图片切割
+            pic_One.onload();
+        })
+        document.getElementById('btnRand').addEventListener('click', function () {
+            for (var i = 0; i < 500; i++)
+                setTimeout(function () {
+                    randPic();
+                }, 100);
+
+        })
+        // var tb = document.getElementById('Table');
+
+        // var tb_width = +document.getElementById('p_width').value;
+        // var tb_height = +document.getElementById('p_height').value;
+        // var pic_width = 100;
+        // var pic_height = 100;
+        // var pic_One = document.getElementById('image');
+        // var table = document.createElement('table');
+        table.setAttribute('border', '0');
+        table.setAttribute('cellPadding', '0');
+        table.setAttribute('cellSpacing', '1');
+
+        // 图片切割
+        pic_One.onload = function () {
+            var all_w = pic_One.width;
+            var all_h = pic_One.height;
+            var _w = parseInt(all_w / tb_width);
+            var _h = parseInt(all_h / tb_height);
+            for (var h = 0; h < tb_height; h++) {
+                for (var w = 0; w < tb_width; w++) {
+                    var canvas = document.createElement("canvas");
+                    var ctx = canvas.getContext('2d');
+                    canvas.setAttribute('width', pic_width + 'px');
+                    canvas.setAttribute('height', pic_height + 'px');
+                    canvas.style.display = 'block';
+                    canvas.setAttribute('index', h * tb_width + w + 1);
+                    canvas.setAttribute('x', w + 1);
+                    canvas.setAttribute('y', h + 1);
+                    ctx.drawImage(image, w * _w, h * _h, _w, _h, 0, 0, pic_width, pic_height);
+                    pics.push(canvas);
+                }
+            }
+            // 放置 
+            var count = tb_width * tb_height - 1; // 最后一个单元格将置空
+            for (var h = 0; h < tb_height; h++) {
+                var tr = document.createElement('tr');
+                tr.setAttribute('tag', 'tr');
+                for (var w = 0; w < tb_width; w++) {
+                    var td = document.createElement('td');
+                    td.setAttribute('tag', 'td');
+                    td.setAttribute('width', pic_width);
+                    td.setAttribute('height', pic_height);
+                    td.setAttribute('rx', w + 1); // 实际位置
+                    td.setAttribute('ry', h + 1);
+                    td.style.backgroundColor = '#f00';
+                    // var span = (w + 1) * (h + 1);
+                    // td.innerText = span;
+                    td.addEventListener('click', function (e) {
+                        if (!this.hasChildNodes()) return;
+                        var x = this.children[0].getAttribute('x');
+                        var y = this.children[0].getAttribute('y');
+                        var rx = this.getAttribute('rx');
+                        var ry = this.getAttribute('ry');
+
+                        var t = CanMove(+x, +y, +rx, +ry);
+                        MoveTo(this, t);
+                        if (Perfect()) {
+                            alert('通关!');
+                        }
+                    }, false);
+                    if (count > 0) {
+                        tr.appendChild(td);
+                        // var index = parseInt(Math.random() * count);
+                        // var index = pics.length - count;
+                        var index = 0;
+
+                        td.appendChild(pics[index]);
+                        pics.splice(index, 1);
+                        count--;
+                    } else {
+                        tr.appendChild(td);
+                        // 最后一个格子要空着
+                        break;
+                    }
+
+                }
+                table.appendChild(tr)
+            }
+            tb.appendChild(table)
+        }
+        // x,y当前图标标记位置, rx,ry当前实际位置 
+        function CanMove(x, y, rx, ry) {
+            // 检查能不能移动,最多四个坐标 
+            var tags = document.getElementsByTagName('td');
+            var f = -1;
+            for (var i = 0; i < tags.length; i++) {
+                var r_x = +tags[i].getAttribute('rx');
+                var r_y = +tags[i].getAttribute('ry');
+                // 上
+                if (r_x == rx && r_y == ry - 1 && !tags[i].hasChildNodes()) {
+                    f = 0;
+                }
+                // 下
+                if (r_x == rx && r_y == ry + 1 && !tags[i].hasChildNodes()) {
+                    f = 1;
+                }
+                // 左
+                if (r_x == rx - 1 && r_y == ry && !tags[i].hasChildNodes()) {
+                    f = 2;
+                }
+                // 右
+                if (r_x == rx + 1 && r_y == ry && !tags[i].hasChildNodes()) {
+                    f = 3;
+                }
+            }
+            return f;
+        }
+        // td 单元格,f 方向
+        function MoveTo(td, f) {
+            var rx = +td.getAttribute('rx');
+            var ry = +td.getAttribute('ry');
+            var tags = document.getElementsByTagName('td');
+
+            switch (f) {
+                case 0:
+                    for (var i = 0; i < tags.length; i++) {
+                        var r_x = +tags[i].getAttribute('rx');
+                        var r_y = +tags[i].getAttribute('ry');
+                        if (r_x == rx && r_y == ry - 1) {
+                            tags[i].appendChild(td.children[0]);
+                            td.removeChild[0]
+                            return;
+                        }
+                    }
+                    break;
+                case 1:
+                    for (var i = 0; i < tags.length; i++) {
+                        var r_x = +tags[i].getAttribute('rx');
+                        var r_y = +tags[i].getAttribute('ry');
+                        if (r_x == rx && r_y == ry + 1) {
+                            tags[i].appendChild(td.children[0]);
+                            td.removeChild[0]
+                            // return;
+                        }
+                    }
+                    break;
+                case 2:
+                    for (var i = 0; i < tags.length; i++) {
+                        var r_x = +tags[i].getAttribute('rx');
+                        var r_y = +tags[i].getAttribute('ry');
+                        if (r_x == rx - 1 && r_y == ry) {
+                            tags[i].appendChild(td.children[0]);
+                            td.removeChild[0]
+                            return;
+                        }
+                    }
+                    break;
+                case 3:
+                    for (var i = 0; i < tags.length; i++) {
+                        var r_x = +tags[i].getAttribute('rx');
+                        var r_y = +tags[i].getAttribute('ry');
+                        if (r_x == rx + 1 && r_y == ry) {
+                            tags[i].appendChild(td.children[0]);
+                            td.removeChild[0]
+                            return;
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        function Perfect() {
+            var list = '';
+            var count = tb_width * tb_height;
+            for (var i = 1; i < count; i++) {
+                list += '' + i;
+            }
+            var r_list = '';
+            var tags = document.getElementsByTagName('td');
+            for (var i = 0; i < tags.length; i++) {
+                if (tags[i].hasChildNodes()) {
+                    var _index = tags[i].children[0].getAttribute('index');
+                    r_list += '' + _index;
+                }
+            }
+            return list == r_list;
+        }
+        // 随机图片
+        function randPic() {
+            // 从空的地方开始遍历  
+            var td, tags = document.getElementsByTagName('td'); // 有内容的
+            for (var i = 0; i < tags.length; i++) {
+                if (!tags[i].hasChildNodes()) {
+                    var last_x = +tags[i].getAttribute('rx');
+                    var last_y = +tags[i].getAttribute('ry');
+                    td = tags[i];
+                }
+            }
+            var f = Math.floor(Math.random() * 4); //  随机一个方向,如果不能,再随机.
+
+            switch (f) {
+                case 0:
+                    // 上 
+                    // MoveTo(tb, 1);
+                    for (var i = 0; i < tags.length; i++) {
+                        var r_x = +tags[i].getAttribute('rx');
+                        var r_y = +tags[i].getAttribute('ry');
+                        if (r_x == last_x && r_y + 1 == last_y) {
+                            // MoveTo(tags[i], 1); // 下移 
+                            td.appendChild(tags[i].children[0]);
+                            tags[i].removeChild[0];
+                            return;
+                        }
+                    }
+                    break;
+                case 1:
+                    // 上  
+                    for (var i = 0; i < tags.length; i++) {
+                        var r_x = +tags[i].getAttribute('rx');
+                        var r_y = +tags[i].getAttribute('ry');
+                        if (r_x == last_x && r_y - 1 == last_y) {
+                            // MoveTo(tags[i], 0); // 下移
+                            td.appendChild(tags[i].children[0]);
+                            tags[i].removeChild[0];
+                            return;
+                        }
+                    }
+                    break;
+                case 2:
+                    // 左 
+                    for (var i = 0; i < tags.length; i++) {
+                        var r_x = +tags[i].getAttribute('rx');
+                        var r_y = +tags[i].getAttribute('ry');
+                        if (r_x + 1 == last_x && r_y == last_y) {
+                            // MoveTo(tags[i], 3); // 下移
+                            td.appendChild(tags[i].children[0]);
+                            tags[i].removeChild[0];
+                            return;
+                        }
+                    }
+                    break;
+                case 3:
+                    // 上  
+                    for (var i = 0; i < tags.length; i++) {
+                        var r_x = +tags[i].getAttribute('rx');
+                        var r_y = +tags[i].getAttribute('ry');
+                        if (r_x - 1 == last_x && r_y == last_y) {
+                            // MoveTo(tags[i], 2); // 下移
+                            td.appendChild(tags[i].children[0]);
+                            tags[i].removeChild[0];
+                            return;
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    </script>
+</body>
+
+</html>
